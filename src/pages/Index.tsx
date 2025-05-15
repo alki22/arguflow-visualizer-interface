@@ -7,106 +7,11 @@ import { toast } from '@/components/ui/sonner';
 import TextForm from '@/components/TextForm';
 import AnalysisResult from '@/components/AnalysisResult';
 
-// Mock analysis functions (in a real app, these would call your backend)
-const mockAnalyze = (type: string, text1: string, text2: string): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Sanitize inputs - in a real application you'd do this on the server
-      const sanitizedText1 = text1.replace(/<[^>]*>?/gm, '');
-      const sanitizedText2 = text2.replace(/<[^>]*>?/gm, '');
-      
-      // Generate a placeholder result based on the analysis type
-      let result = '';
-      
-      switch (type) {
-        case 'text-similarity':
-          result = `
-# Text Similarity Analysis
-
-\`\`\`python
-def calculate_similarity(text1, text2):
-    # Tokenize texts
-    tokens1 = text1.lower().split()
-    tokens2 = text2.lower().split()
-    
-    # Calculate Jaccard similarity
-    intersection = set(tokens1).intersection(set(tokens2))
-    union = set(tokens1).union(set(tokens2))
-    similarity = len(intersection) / len(union)
-    
-    return similarity
-
-similarity_score = calculate_similarity("${sanitizedText1.substring(0, 15)}...", "${sanitizedText2.substring(0, 15)}...")
-print(f"Similarity score: {0.42}")  # Placeholder score
-\`\`\`
-
-The texts show a 42% similarity coefficient.`;
-          break;
-        case 'topic-similarity':
-          result = `
-# Topic Similarity Analysis
-
-\`\`\`python
-from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
-
-def analyze_topic_similarity(text1, text2):
-    # Create TF-IDF vectors
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([text1, text2])
-    
-    # Calculate cosine similarity
-    similarity = (tfidf_matrix * tfidf_matrix.T).toarray()[0, 1]
-    
-    # Get top shared terms
-    feature_names = vectorizer.get_feature_names_out()
-    dense = tfidf_matrix.todense()
-    
-    return similarity, feature_names
-
-similarity, terms = analyze_topic_similarity("${sanitizedText1.substring(0, 15)}...", "${sanitizedText2.substring(0, 15)}...")
-print(f"Topic similarity: {0.65}")  # Placeholder score
-\`\`\`
-
-The texts share 65% topic similarity, with key shared terms including 'argumentation' and 'analysis'.`;
-          break;
-        case 'stance-classification':
-          result = `
-# Stance Classification Analysis
-
-\`\`\`python
-def classify_stance(text1, text2):
-    # In a real application, this would use a trained model
-    # to determine if text2 agrees/disagrees/is neutral to text1
-    
-    # Simplified approach - check for agreement indicators
-    agreement_words = ['agree', 'concur', 'correct', 'right', 'exactly']
-    disagreement_words = ['disagree', 'incorrect', 'wrong', 'false', 'mistaken']
-    
-    text_lower = text2.lower()
-    
-    # Count indicators
-    agreement_count = sum(word in text_lower for word in agreement_words)
-    disagreement_count = sum(word in text_lower for word in disagreement_words)
-    
-    if agreement_count > disagreement_count:
-        return "Agreement"
-    elif disagreement_count > agreement_count:
-        return "Disagreement"
-    else:
-        return "Neutral"
-
-stance = classify_stance("${sanitizedText1.substring(0, 15)}...", "${sanitizedText2.substring(0, 15)}...")
-print(f"Classified stance: {stance}")
-\`\`\`
-
-The analysis indicates a 'Neutral' stance between the texts, with no strong indicators of agreement or disagreement.`;
-          break;
-      }
-      
-      resolve(result);
-    }, 2000); // Simulate network delay
-  });
+// API endpoints for Supabase Edge Functions (replace these with your actual endpoints after setting up Supabase)
+const API_ENDPOINTS = {
+  'text-similarity': 'https://your-project-ref.supabase.co/functions/v1/text-similarity',
+  'topic-similarity': 'https://your-project-ref.supabase.co/functions/v1/topic-similarity',
+  'stance-classification': 'https://your-project-ref.supabase.co/functions/v1/stance-classification'
 };
 
 const Index = () => {
@@ -132,9 +37,111 @@ const Index = () => {
       setIsLoading(true);
       setResult(null);
       
-      const analysisResult = await mockAnalyze(activeTab, text1, text2);
+      // Call the appropriate API endpoint based on the active tab
+      const endpoint = API_ENDPOINTS[activeTab as keyof typeof API_ENDPOINTS];
       
-      setResult(analysisResult);
+      // For testing before Supabase is set up, use a timeout to simulate API call
+      if (endpoint.includes('your-project-ref')) {
+        // This is a placeholder - it will be replaced with the real API call once Supabase is configured
+        setTimeout(() => {
+          const mockResults = {
+            'text-similarity': `
+# Text Similarity Analysis
+
+\`\`\`python
+def calculate_similarity(text1, text2):
+    # PLACEHOLDER: Replace with your actual text similarity implementation
+    # Example: TF-IDF vectorization with cosine similarity
+    
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform([text1, text2])
+    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+    
+    return similarity
+
+similarity_score = calculate_similarity("${text1.substring(0, 15)}...", "${text2.substring(0, 15)}...")
+print(f"Similarity score: {0.42}")  # This will be replaced with actual calculation
+\`\`\`
+
+The texts show a 42% similarity coefficient.`,
+            'topic-similarity': `
+# Topic Similarity Analysis
+
+\`\`\`python
+def analyze_topic_similarity(text1, text2):
+    # PLACEHOLDER: Replace with your actual topic similarity implementation
+    # Example: LDA topic modeling
+    
+    import gensim
+    from gensim.corpora import Dictionary
+    
+    # Tokenize and prepare texts
+    # Extract topics from both texts
+    # Compare topic distributions
+    
+    # This is just a placeholder implementation
+    return 0.65, ["term1", "term2", "term3"]
+
+similarity, terms = analyze_topic_similarity("${text1.substring(0, 15)}...", "${text2.substring(0, 15)}...")
+print(f"Topic similarity: {similarity}")
+\`\`\`
+
+The texts share 65% topic similarity, with key shared terms including 'argumentation' and 'analysis'.`,
+            'stance-classification': `
+# Stance Classification Analysis
+
+\`\`\`python
+def classify_stance(text1, text2):
+    # PLACEHOLDER: Replace with your actual stance classification model
+    # Example: Fine-tuned transformer model for stance detection
+    
+    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    import torch
+    
+    # This would be replaced with actual model loading and prediction code
+    # model = AutoModelForSequenceClassification.from_pretrained("stance-detection-model")
+    # tokenizer = AutoTokenizer.from_pretrained("stance-detection-model")
+    
+    # Actual prediction would happen here
+    stance = "Neutral"  # Placeholder result
+    
+    return stance
+
+stance = classify_stance("${text1.substring(0, 15)}...", "${text2.substring(0, 15)}...")
+print(f"Classified stance: {stance}")
+\`\`\`
+
+The analysis indicates a 'Neutral' stance between the texts, with no strong indicators of agreement or disagreement.`
+          };
+          
+          setResult(mockResults[activeTab as keyof typeof mockResults]);
+          setIsLoading(false);
+        }, 2000);
+        return;
+      }
+      
+      // Real API call (will be used when Supabase is configured)
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text1,
+          text2
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setResult(data.result);
+      
     } catch (error) {
       console.error("Analysis error:", error);
       toast.error("An error occurred during analysis. Please try again.");
