@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -7,21 +6,51 @@ import { toast } from '@/components/ui/sonner';
 import TextForm from '@/components/TextForm';
 import AnalysisResult from '@/components/AnalysisResult';
 
-// API endpoints for Supabase Edge Functions (replace these with your actual endpoints after setting up Supabase)
+function formatSimilarityOutput(result: {
+  sentence1: string;
+  sentence2: string;
+  overall_similarity: number;
+  feature_similarities: Record<string, number>;
+}): string {
+  let output = "";
+  
+  output += `Overall Similarity: ${result.overall_similarity.toFixed(4)}`;
+  
+  output += "\n\nSemantic Feature Similarities:";
+  
+  // Get all feature similarities excluding global and residual
+  const features = Object.fromEntries(
+    Object.entries(result.feature_similarities)
+      .filter(([k, _]) => k !== 'global' && k !== 'residual')
+  );
+  
+  // Sort features by similarity score
+  const sortedFeatures = Object.entries(features)
+    .sort(([_, a], [__, b]) => b - a);
+  
+  // Add each feature line
+  for (const [feature, score] of sortedFeatures) {
+    output += `\n  - ${feature.trim()}: ${score.toFixed(4)}`;
+  }
+  
+  return output;
+}
+
+// API endpoints for Flask backend
 const API_ENDPOINTS = {
-  'text-similarity': 'https://your-project-ref.supabase.co/functions/v1/text-similarity',
-  'topic-similarity': 'https://your-project-ref.supabase.co/functions/v1/topic-similarity',
-  'stance-classification': 'https://your-project-ref.supabase.co/functions/v1/stance-classification'
+  'text-similarity': 'http://localhost:5000/compare',
+  'topic-similarity': 'http://localhost:5000/compare', // Using same endpoint for now
+  'stance-classification': 'http://localhost:5000/compare' // Using same endpoint for now
 };
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('text-similarity');
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleTabChange = (value: string) => {
+  const handleTabChange = (value) => {
     setActiveTab(value);
     setResult(null);
   };
@@ -38,100 +67,16 @@ const Index = () => {
       setResult(null);
       
       // Call the appropriate API endpoint based on the active tab
-      const endpoint = API_ENDPOINTS[activeTab as keyof typeof API_ENDPOINTS];
+      const endpoint = API_ENDPOINTS[activeTab];
       
-      // For testing before Supabase is set up, use a timeout to simulate API call
-      if (endpoint.includes('your-project-ref')) {
-        // This is a placeholder - it will be replaced with the real API call once Supabase is configured
-        setTimeout(() => {
-          const mockResults = {
-            'text-similarity': `
-# Text Similarity Analysis
-
-\`\`\`python
-def calculate_similarity(text1, text2):
-    # PLACEHOLDER: Replace with your actual text similarity implementation
-    # Example: TF-IDF vectorization with cosine similarity
-    
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([text1, text2])
-    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    
-    return similarity
-
-similarity_score = calculate_similarity("${text1.substring(0, 15)}...", "${text2.substring(0, 15)}...")
-print(f"Similarity score: {0.42}")  # This will be replaced with actual calculation
-\`\`\`
-
-The texts show a 42% similarity coefficient.`,
-            'topic-similarity': `
-# Topic Similarity Analysis
-
-\`\`\`python
-def analyze_topic_similarity(text1, text2):
-    # PLACEHOLDER: Replace with your actual topic similarity implementation
-    # Example: LDA topic modeling
-    
-    import gensim
-    from gensim.corpora import Dictionary
-    
-    # Tokenize and prepare texts
-    # Extract topics from both texts
-    # Compare topic distributions
-    
-    # This is just a placeholder implementation
-    return 0.65, ["term1", "term2", "term3"]
-
-similarity, terms = analyze_topic_similarity("${text1.substring(0, 15)}...", "${text2.substring(0, 15)}...")
-print(f"Topic similarity: {similarity}")
-\`\`\`
-
-The texts share 65% topic similarity, with key shared terms including 'argumentation' and 'analysis'.`,
-            'stance-classification': `
-# Stance Classification Analysis
-
-\`\`\`python
-def classify_stance(text1, text2):
-    # PLACEHOLDER: Replace with your actual stance classification model
-    # Example: Fine-tuned transformer model for stance detection
-    
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification
-    import torch
-    
-    # This would be replaced with actual model loading and prediction code
-    # model = AutoModelForSequenceClassification.from_pretrained("stance-detection-model")
-    # tokenizer = AutoTokenizer.from_pretrained("stance-detection-model")
-    
-    # Actual prediction would happen here
-    stance = "Neutral"  # Placeholder result
-    
-    return stance
-
-stance = classify_stance("${text1.substring(0, 15)}...", "${text2.substring(0, 15)}...")
-print(f"Classified stance: {stance}")
-\`\`\`
-
-The analysis indicates a 'Neutral' stance between the texts, with no strong indicators of agreement or disagreement.`
-          };
-          
-          setResult(mockResults[activeTab as keyof typeof mockResults]);
-          setIsLoading(false);
-        }, 2000);
-        return;
-      }
-      
-      // Real API call (will be used when Supabase is configured)
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text1,
-          text2
+          sentence1: text1,
+          sentence2: text2
         }),
       });
       
@@ -140,11 +85,42 @@ The analysis indicates a 'Neutral' stance between the texts, with no strong indi
       }
       
       const data = await response.json();
-      setResult(data.result);
+      
+      if (data.status === 'success' && data.result) {
+        // Format the result based on the active tab
+        let formattedResult;
+        const similarityScore = data.result.overall_similarity;
+        const scorePercent = Math.round(similarityScore * 100);
+        
+        switch(activeTab) {
+          case 'text-similarity':
+            formattedResult = formatSimilarityOutput(data.result);
+            break;
+          case 'topic-similarity':
+            formattedResult = `The texts share ${scorePercent}% topic similarity.`;
+            break;
+          case 'stance-classification':
+            if (scorePercent >= 75) {
+              formattedResult = `The analysis indicates strong agreement (${scorePercent}%).`;
+            } else if (scorePercent >= 40) {
+              formattedResult = `The analysis indicates a neutral stance (${scorePercent}%).`;
+            } else {
+              formattedResult = `The analysis indicates disagreement (${scorePercent}%).`;
+            }
+            break;
+          default:
+            formattedResult = `Similarity score: ${scorePercent}%`;
+        }
+        
+        // Store the formatted result
+        setResult(formattedResult);
+      } else {
+        throw new Error("Invalid API response format");
+      }
       
     } catch (error) {
       console.error("Analysis error:", error);
-      toast.error("An error occurred during analysis. Please try again.");
+      toast.error(`An error occurred during analysis: ${error}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
