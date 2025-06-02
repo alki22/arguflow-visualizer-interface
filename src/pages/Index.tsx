@@ -11,12 +11,10 @@ function formatSimilarityOutput(result: {
   sentence2: string;
   overall_similarity: number;
   feature_similarities: Record<string, number>;
-}): string {
-  let output = "";
+}): { basic: string; details: string } {
+  const basic = `Overall Similarity: ${result.overall_similarity.toFixed(4)}`;
   
-  output += `Overall Similarity: ${result.overall_similarity.toFixed(4)}`;
-  
-  output += "\n\nSemantic Feature Similarities:";
+  let details = "Semantic Feature Similarities:";
   
   // Get all feature similarities excluding global and residual
   const features = Object.fromEntries(
@@ -30,10 +28,10 @@ function formatSimilarityOutput(result: {
   
   // Add each feature line
   for (const [feature, score] of sortedFeatures) {
-    output += `\n  - ${feature.trim()}: ${score.toFixed(4)}`;
+    details += `\n  - ${feature.trim()}: ${score.toFixed(4)}`;
   }
   
-  return output;
+  return { basic, details };
 }
 
 export function formatTopicSimilarityOutput(response: any): string {
@@ -136,11 +134,11 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<AnalysisType>('text-similarity');
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<string | { basic: string; details: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleTabChange = (value) => {
-    setActiveTab(value);
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as AnalysisType);
     setResult(null);
   };
 
@@ -155,8 +153,6 @@ const Index = () => {
       setIsLoading(true);
       setResult(null);
       
-      const analysisResult = await analyzeTexts(activeTab, text1, text2);
-      setResult(analysisResult);
       // Call the appropriate API endpoint based on the active tab
       const endpoint = API_ENDPOINTS[activeTab];
       
@@ -180,8 +176,6 @@ const Index = () => {
       if (data.status === 'success' && data.result) {
         // Format the result based on the active tab
         let formattedResult;
-        const similarityScore = data.result.overall_similarity;
-        const scorePercent = Math.round(similarityScore * 100);
         
         switch(activeTab) {
           case 'text-similarity':
@@ -194,6 +188,8 @@ const Index = () => {
             formattedResult = `${data.result.stance} \n${data.result.justification}`;
             break;
           default:
+            const similarityScore = data.result.overall_similarity;
+            const scorePercent = Math.round(similarityScore * 100);
             formattedResult = `Similarity score: ${scorePercent}%`;
         }
         
@@ -220,7 +216,7 @@ const Index = () => {
         <CardContent className="pt-6">
           <AnalysisTabs
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleTabChange}
             text1={text1}
             setText1={setText1}
             text2={text2}

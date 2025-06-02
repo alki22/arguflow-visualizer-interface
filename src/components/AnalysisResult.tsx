@@ -1,14 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface AnalysisResultProps {
-  result: string | null;
+  result: string | { basic: string; details: string } | null;
   isLoading: boolean;
+  activeTab: string;
   className?: string;
 }
 
-const AnalysisResult = ({ result, isLoading, className }: AnalysisResultProps) => {
+const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisResultProps) => {
+  const [showDetails, setShowDetails] = useState(false);
+
   if (isLoading) {
     return (
       <div className={cn("mt-6 space-y-4", className)}>
@@ -26,11 +30,36 @@ const AnalysisResult = ({ result, isLoading, className }: AnalysisResultProps) =
 
   if (!result) return null;
 
+  // Handle text similarity with detailed results
+  if (activeTab === 'text-similarity' && typeof result === 'object' && 'basic' in result) {
+    return (
+      <div className={cn("mt-6 animate-fade-in", className)}>
+        <h3 className="text-lg font-medium mb-4">Analysis Result</h3>
+        <pre className="code-block whitespace-pre-wrap mb-4">
+          {result.basic}
+        </pre>
+        <Button 
+          variant="outline" 
+          onClick={() => setShowDetails(!showDetails)}
+          className="mb-4"
+        >
+          {showDetails ? 'Hide details' : 'More details'}
+        </Button>
+        {showDetails && (
+          <pre className="code-block whitespace-pre-wrap animate-fade-in">
+            {result.details}
+          </pre>
+        )}
+      </div>
+    );
+  }
+
+  // Handle other analysis types with string results
   return (
     <div className={cn("mt-6 animate-fade-in", className)}>
       <h3 className="text-lg font-medium mb-4">Analysis Result</h3>
       <pre className="code-block whitespace-pre-wrap">
-        {result}
+        {typeof result === 'string' ? result : result.basic}
       </pre>
     </div>
   );

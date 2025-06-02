@@ -12,7 +12,7 @@ interface AnalysisTabsProps {
   setText1: (value: string) => void;
   text2: string;
   setText2: (value: string) => void;
-  result: string | null;
+  result: string | { basic: string; details: string } | null;
   isLoading: boolean;
   handleAnalyze: () => void;
 }
@@ -34,12 +34,8 @@ const AnalysisTabs = ({
   isLoading,
   handleAnalyze
 }: AnalysisTabsProps) => {
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange}>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="grid grid-cols-3 mb-6">
         <TabsTrigger value="text-similarity">Text Similarity</TabsTrigger>
         <TabsTrigger value="topic-similarity">Topic Similarity</TabsTrigger>
@@ -65,6 +61,7 @@ const AnalysisTabs = ({
         <AnalysisResult 
           result={result} 
           isLoading={isLoading} 
+          activeTab={activeTab}
         />
       </div>
     </Tabs>
