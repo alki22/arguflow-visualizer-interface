@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
+import AnalysisTabs from '@/components/AnalysisTabs';
+import { analyzeTexts, type AnalysisType } from '@/services/analysisService';
 import TextForm from '@/components/TextForm';
 import AnalysisResult from '@/components/AnalysisResult';
 
@@ -133,7 +133,7 @@ const API_ENDPOINTS = {
 };
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('text-similarity');
+  const [activeTab, setActiveTab] = useState<AnalysisType>('text-similarity');
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
   const [result, setResult] = useState(null);
@@ -155,6 +155,8 @@ const Index = () => {
       setIsLoading(true);
       setResult(null);
       
+      const analysisResult = await analyzeTexts(activeTab, text1, text2);
+      setResult(analysisResult);
       // Call the appropriate API endpoint based on the active tab
       const endpoint = API_ENDPOINTS[activeTab];
       
@@ -216,67 +218,18 @@ const Index = () => {
           <CardTitle className="text-2xl font-medium text-center">Argumentation Analysis Tool</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="grid grid-cols-3 mb-6">
-              <TabsTrigger value="text-similarity">Text Similarity</TabsTrigger>
-              <TabsTrigger value="topic-similarity">Topic Similarity</TabsTrigger>
-              <TabsTrigger value="stance-classification">Stance Classification</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="text-similarity" className="mt-0 animate-fade-in">
-              <p className="text-muted-foreground mb-6">
-                Compare two texts to analyze their linguistic similarity based on shared vocabulary and structure.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="topic-similarity" className="mt-0 animate-fade-in">
-              <p className="text-muted-foreground mb-6">
-                Analyze two texts to determine similarity in topics, themes, and subject matter.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="stance-classification" className="mt-0 animate-fade-in">
-              <p className="text-muted-foreground mb-6">
-                Determine if the second text agrees, disagrees, or is neutral with respect to the first text.
-              </p>
-            </TabsContent>
-            
-            <div className="space-y-6 mt-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TextForm
-                  id="text1"
-                  label="First Text"
-                  placeholder="Enter the first text for analysis..."
-                  value={text1}
-                  onChange={setText1}
-                />
-                
-                <TextForm
-                  id="text2"
-                  label="Second Text"
-                  placeholder="Enter the second text for analysis..."
-                  value={text2}
-                  onChange={setText2}
-                />
-              </div>
-              
-              <AnalysisResult 
-                result={result} 
-                isLoading={isLoading} 
-              />
-            </div>
-          </Tabs>
+          <AnalysisTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            text1={text1}
+            setText1={setText1}
+            text2={text2}
+            setText2={setText2}
+            result={result}
+            isLoading={isLoading}
+            handleAnalyze={handleAnalyze}
+          />
         </CardContent>
-        <CardFooter className="justify-center border-t pt-6">
-          <Button 
-            size="lg" 
-            onClick={handleAnalyze} 
-            disabled={isLoading}
-            className="min-w-32 font-medium transition-all hover:scale-105"
-          >
-            {isLoading ? "Processing..." : "GO"}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );

@@ -1,4 +1,3 @@
-
 # Supabase Edge Functions Setup Guide for Argumentation Analysis Tool
 
 This guide explains how to set up Supabase Edge Functions to run Python code for the text analysis functionality in your application.
@@ -39,28 +38,8 @@ class handler(BaseHTTPRequestHandler):
         
         similarity = calculate_similarity(text1, text2)
         
-        # Format result with code explanation
-        result = f"""
-# Text Similarity Analysis
-
-```python
-def calculate_similarity(text1, text2):
-    # TF-IDF vectorization with cosine similarity
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([text1, text2])
-    similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    
-    return similarity
-
-similarity_score = calculate_similarity("{text1[:15]}...", "{text2[:15]}...")
-print(f"Similarity score: {similarity:.2f}")
-```
-
-The texts show a {similarity:.0%} similarity coefficient.
-"""
+        # Format result - simplified version with just the conclusion
+        result = f"The texts show a {similarity:.0%} similarity coefficient."
         
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -99,30 +78,8 @@ class handler(BaseHTTPRequestHandler):
         
         similarity, shared_terms = analyze_topic_similarity(text1, text2)
         
-        # Format result with code explanation
-        result = f"""
-# Topic Similarity Analysis
-
-```python
-def analyze_topic_similarity(text1, text2):
-    # Topic modeling implementation
-    # Example using LDA topic modeling
-    
-    import gensim
-    from gensim.corpora import Dictionary
-    from gensim.models import LdaModel
-    
-    # Implementation details here...
-    # This would extract topics and compare distributions
-    
-    return similarity, shared_terms
-
-similarity, terms = analyze_topic_similarity("{text1[:15]}...", "{text2[:15]}...")
-print(f"Topic similarity: {similarity:.2f}")
-```
-
-The texts share {similarity:.0%} topic similarity, with key shared terms including '{shared_terms[0]}' and '{shared_terms[1]}'.
-"""
+        # Format result - simplified version with just the conclusion
+        result = f"The texts share {similarity:.0%} topic similarity, with key shared terms including '{shared_terms[0]}' and '{shared_terms[1]}'."
         
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -161,29 +118,8 @@ class handler(BaseHTTPRequestHandler):
         
         stance = classify_stance(text1, text2)
         
-        # Format result with code explanation
-        result = f"""
-# Stance Classification Analysis
-
-```python
-def classify_stance(text1, text2):
-    # Stance classification implementation
-    # Example using a transformer-based approach
-    
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification
-    import torch
-    
-    # Model loading and prediction would happen here
-    # This would determine if text2 agrees/disagrees/is neutral to text1
-    
-    return stance_prediction
-
-stance = classify_stance("{text1[:15]}...", "{text2[:15]}...")
-print(f"Classified stance: {stance}")
-```
-
-The analysis indicates a '{stance}' stance between the texts.
-"""
+        # Format result - simplified version with just the conclusion
+        result = f"The analysis indicates a '{stance}' stance between the texts."
         
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
