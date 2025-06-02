@@ -36,11 +36,100 @@ function formatSimilarityOutput(result: {
   return output;
 }
 
+export function formatTopicSimilarityOutput(response: any): string {
+  if (!response || typeof response !== 'object') {
+    return 'Invalid response format';
+  }
+
+  const {
+    interpretation,
+    topic_info,
+    distributions,
+    similarities
+  } = response;
+
+  let output = '';
+
+  // 1. Interpretation
+  if (interpretation) {
+    output += `Interpretation: ${interpretation}\n\n`;
+  }
+
+  // 2. List of topics with key words in 'representation'
+  if (topic_info?.topics && Array.isArray(topic_info.topics)) {
+    output += `Identified Topics:\n\n`;
+    
+    topic_info.topics.forEach((topic: any, index: number) => {
+      const topicName = topic.Name || `Topic ${topic.Topic || index}`;
+      const keywords = topic.Representation || [];
+      
+      output += `Topic ${topic.Topic || index}: ${topicName}\n`;
+      output += `Key words: ${keywords.join(', ')}\n`;
+      if (topic.Representative_Docs && topic.Representative_Docs.length > 0) {
+        output += `Representative sentences:\n`;
+        topic.Representative_Docs.forEach((doc: string) => {
+          output += `  • "${doc.trim()}"\n`;
+        });
+      }
+      output += '\n';
+    });
+  }
+
+  // 3. List of topics for each argument
+  if (distributions) {
+    output += `Topic Distribution by Argument:\n\n`;
+    
+    if (distributions.argument1_topics) {
+      output += `Argument 1 Topics: ${distributions.argument1_topics.join(', ')}\n`;
+    }
+    
+    if (distributions.argument2_topics) {
+      output += `Argument 2 Topics: ${distributions.argument2_topics.join(', ')}\n`;
+    }
+    
+    output += '\n';
+  }
+
+  // 4. Calculated metrics
+  if (similarities) {
+    output += `Similarity Metrics:\n\n`;
+    
+    if (typeof similarities.cosine_similarity === 'number') {
+      output += `• Cosine Similarity: ${similarities.cosine_similarity.toFixed(3)}\n`;
+    }
+    
+    if (typeof similarities.jaccard_similarity === 'number') {
+      output += `• Jaccard Similarity: ${similarities.jaccard_similarity.toFixed(3)}\n`;
+    }
+    
+    if (typeof similarities.js_distance === 'number') {
+      output += `• Jensen-Shannon Distance: ${similarities.js_distance.toFixed(3)}\n`;
+    }
+    
+    output += '\n';
+  }
+
+  // Additional statistics if available
+  if (topic_info?.total_sentences || topic_info?.total_topics) {
+    output += `Analysis Statistics:\n\n`;
+    
+    if (topic_info.total_sentences) {
+      output += `• Total Sentences Analyzed: ${topic_info.total_sentences}\n`;
+    }
+    
+    if (topic_info.total_topics) {
+      output += `• Total Topics Discovered: ${topic_info.total_topics}\n`;
+    }
+  }
+
+  return output.trim();
+}
+
 // API endpoints for Flask backend
 const API_ENDPOINTS = {
-  'text-similarity': 'http://localhost:5000/compare',
-  'topic-similarity': 'http://localhost:5000/compare', // Using same endpoint for now
-  'stance-classification': 'http://localhost:5000/compare' // Using same endpoint for now
+  'text-similarity': 'http://127.0.0.1:5000/compare',
+  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity',
+  'stance-classification': 'http://localhost:5000/stance-classification' // Using same endpoint for now
 };
 
 const Index = () => {
@@ -75,8 +164,8 @@ const Index = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sentence1: text1,
-          sentence2: text2
+          argument1: text1,
+          argument2: text2
         }),
       });
       
@@ -97,16 +186,10 @@ const Index = () => {
             formattedResult = formatSimilarityOutput(data.result);
             break;
           case 'topic-similarity':
-            formattedResult = `The texts share ${scorePercent}% topic similarity.`;
+            formattedResult = formatTopicSimilarityOutput(data.result);
             break;
           case 'stance-classification':
-            if (scorePercent >= 75) {
-              formattedResult = `The analysis indicates strong agreement (${scorePercent}%).`;
-            } else if (scorePercent >= 40) {
-              formattedResult = `The analysis indicates a neutral stance (${scorePercent}%).`;
-            } else {
-              formattedResult = `The analysis indicates disagreement (${scorePercent}%).`;
-            }
+            formattedResult = `${data.result.stance} \n${data.result.justification}`;
             break;
           default:
             formattedResult = `Similarity score: ${scorePercent}%`;
