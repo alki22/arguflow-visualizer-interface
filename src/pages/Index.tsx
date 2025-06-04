@@ -201,6 +201,8 @@ const Index = () => {
   const [text2, setText2] = useState('');
   const [result, setResult] = useState<string | { basic: string; details: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [useTopic, setUseTopic] = useState(false);
+  const [topic, setTopic] = useState('');
 
   const handleTabChange = (value: string) => {
     setActiveTab(value as AnalysisType);
@@ -289,6 +291,10 @@ const Index = () => {
             result={result}
             isLoading={isLoading}
             handleAnalyze={handleAnalyze}
+            useTopic={useTopic}
+            setUseTopic={setUseTopic}
+            topic={topic}
+            setTopic={setTopic}
           />
         </CardContent>
       </Card>

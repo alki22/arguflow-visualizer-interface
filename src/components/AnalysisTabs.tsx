@@ -15,6 +15,10 @@ interface AnalysisTabsProps {
   result: string | { basic: string; details: string } | null;
   isLoading: boolean;
   handleAnalyze: () => void;
+  useTopic: boolean;
+  setUseTopic: (value: boolean) => void;
+  topic: string;
+  setTopic: (value: string) => void;
 }
 
 const tabDescriptions = {
@@ -32,7 +36,11 @@ const AnalysisTabs = ({
   setText2,
   result,
   isLoading,
-  handleAnalyze
+  handleAnalyze,
+  useTopic,
+  setUseTopic,
+  topic,
+  setTopic
 }: AnalysisTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -56,6 +64,11 @@ const AnalysisTabs = ({
           setText2={setText2}
           onAnalyze={handleAnalyze}
           isLoading={isLoading}
+          activeTab={activeTab}
+          useTopic={useTopic}
+          setUseTopic={setUseTopic}
+          topic={topic}
+          setTopic={setTopic}
         />
         
         <AnalysisResult 
