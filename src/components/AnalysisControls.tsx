@@ -48,30 +48,28 @@ const AnalysisControls = ({
             onChange={setText1}
           />
           
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="use-topic"
-              checked={useTopic}
-              onCheckedChange={setUseTopic}
-            />
-            <Label htmlFor="use-topic" className="text-sm font-medium">
-              Topic
-            </Label>
-          </div>
-          
-          {useTopic && (
-            <div className="space-y-2">
-              <Label htmlFor="topic" className="text-sm font-medium">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="use-topic"
+                checked={useTopic}
+                onCheckedChange={setUseTopic}
+              />
+              <Label htmlFor="use-topic" className="text-sm font-medium">
                 Topic
               </Label>
+            </div>
+            
+            {useTopic && (
               <Input
                 id="topic"
                 placeholder="Enter the topic..."
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
+                className="flex-1"
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       ) : (
         // Default two-text layout for other tabs
