@@ -24,7 +24,9 @@ interface AnalysisTabsProps {
 const tabDescriptions = {
   'text-similarity': 'Compare two texts to analyze their linguistic similarity based on shared vocabulary and structure.',
   'topic-similarity': 'Analyze two arguments to determine similarity in topics',
-  'stance-classification': 'Determine if the argument is for, against, or is neutral with respect to the given topic. If no topic is provided, the system will extract the topic from the argument.'
+  'stance-classification': 'Determine if the argument is for, against, or is neutral with respect to the given topic. If no topic is provided, the system will extract the topic from the argument.',
+  'reasoning-type-classification': 'Classify the type of reasoning used in the provided text.',
+  'global-similarity-analysis': 'Perform a comprehensive similarity analysis across multiple dimensions.'
 };
 
 const AnalysisTabs = ({
@@ -44,11 +46,18 @@ const AnalysisTabs = ({
 }: AnalysisTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-3 mb-6">
-        <TabsTrigger value="text-similarity">Text Similarity</TabsTrigger>
-        <TabsTrigger value="topic-similarity">Topic Similarity</TabsTrigger>
-        <TabsTrigger value="stance-classification">Stance Classification</TabsTrigger>
-      </TabsList>
+      <div className="space-y-2 mb-6">
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="text-similarity">Text Similarity</TabsTrigger>
+          <TabsTrigger value="topic-similarity">Topic Similarity</TabsTrigger>
+          <TabsTrigger value="stance-classification">Stance Classification</TabsTrigger>
+          <TabsTrigger value="reasoning-type-classification">Reasoning Type</TabsTrigger>
+        </TabsList>
+        
+        <TabsList className="grid grid-cols-1 w-full">
+          <TabsTrigger value="global-similarity-analysis">Global Similarity Analysis</TabsTrigger>
+        </TabsList>
+      </div>
       
       {Object.entries(tabDescriptions).map(([tabId, description]) => (
         <TabsContent key={tabId} value={tabId} className="mt-0 animate-fade-in">

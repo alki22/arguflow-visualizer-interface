@@ -34,42 +34,49 @@ const AnalysisControls = ({
   setTopic
 }: AnalysisControlsProps) => {
   const isStanceClassification = activeTab === 'stance-classification';
+  const isReasoningType = activeTab === 'reasoning-type-classification';
+  const isGlobalSimilarity = activeTab === 'global-similarity-analysis';
+  const isSingleTextTab = isStanceClassification || isReasoningType || isGlobalSimilarity;
 
   return (
     <div className="space-y-6">
-      {isStanceClassification ? (
-        // Stance classification layout
+      {isSingleTextTab ? (
+        // Single text layout for stance classification, reasoning type, and global similarity
         <div className="space-y-4">
           <TextForm
             id="text1"
             label="Text to Analyze"
-            placeholder="Enter the text for stance classification..."
+            placeholder="Enter the text for analysis..."
             value={text1}
             onChange={setText1}
           />
           
-          <div className="flex items-center gap-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="use-topic"
-                checked={useTopic}
-                onCheckedChange={setUseTopic}
-              />
-              <Label htmlFor="use-topic" className="text-sm font-medium">
-                Topic
-              </Label>
+          {isStanceClassification && (
+            <div className="flex items-center gap-3 min-h-[40px]">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="use-topic"
+                  checked={useTopic}
+                  onCheckedChange={setUseTopic}
+                />
+                <Label htmlFor="use-topic" className="text-sm font-medium">
+                  Topic
+                </Label>
+              </div>
+              
+              <div className="flex-1">
+                {useTopic && (
+                  <Input
+                    id="topic"
+                    placeholder="Enter the topic..."
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    className="w-full"
+                  />
+                )}
+              </div>
             </div>
-            
-            {useTopic && (
-              <Input
-                id="topic"
-                placeholder="Enter the topic..."
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="flex-1"
-              />
-            )}
-          </div>
+          )}
         </div>
       ) : (
         // Default two-text layout for other tabs

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
@@ -197,7 +198,7 @@ const API_ENDPOINTS = {
 };
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<AnalysisType>('text-similarity');
+  const [activeTab, setActiveTab] = useState<string>('text-similarity');
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
   const [result, setResult] = useState<string | { basic: string; details: string } | null>(null);
@@ -206,26 +207,40 @@ const Index = () => {
   const [topic, setTopic] = useState('');
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value as AnalysisType);
+    setActiveTab(value);
     setResult(null);
   };
 
   const handleAnalyze = async () => {
-    // Input validation
-    if (activeTab === 'stance-classification') {
+    // Handle new tab types with hardcoded outputs
+    if (activeTab === 'reasoning-type-classification') {
       if (!text1.trim()) {
         toast.error("Please provide text for analysis");
         return;
       }
-      if (useTopic && !topic.trim()) {
-        toast.error("Please provide a topic when topic option is checked");
+      
+      setIsLoading(true);
+      // Simulate loading time
+      setTimeout(() => {
+        setResult("Reasoning Type: Deductive Reasoning\n\nAnalysis: The provided text demonstrates deductive reasoning patterns, starting from general principles and moving toward specific conclusions. The argument structure follows a logical progression from premises to conclusion.\n\nConfidence Score: 0.87");
+        setIsLoading(false);
+      }, 2000);
+      return;
+    }
+
+    if (activeTab === 'global-similarity-analysis') {
+      if (!text1.trim()) {
+        toast.error("Please provide text for analysis");
         return;
       }
-    } else {
-      if (!text1.trim() || !text2.trim()) {
-        toast.error("Please provide text in both input fields");
-        return;
-      }
+      
+      setIsLoading(true);
+      // Simulate loading time
+      setTimeout(() => {
+        setResult("Global Similarity Analysis Results:\n\n• Lexical Similarity: 0.76\n• Semantic Similarity: 0.82\n• Structural Similarity: 0.68\n• Topic Coherence: 0.91\n• Argumentative Similarity: 0.73\n\nOverall Global Similarity Score: 0.78\n\nInterpretation: The texts show high semantic and topic coherence, indicating strong conceptual alignment. Moderate structural similarity suggests different presentation styles while maintaining similar core arguments.");
+        setIsLoading(false);
+      }, 2500);
+      return;
     }
 
     try {
