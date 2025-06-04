@@ -211,9 +211,20 @@ const Index = () => {
 
   const handleAnalyze = async () => {
     // Input validation
-    if (!text1.trim() || !text2.trim()) {
-      toast.error("Please provide text in both input fields");
-      return;
+    if (activeTab === 'stance-classification') {
+      if (!text1.trim()) {
+        toast.error("Please provide text for analysis");
+        return;
+      }
+      if (useTopic && !topic.trim()) {
+        toast.error("Please provide a topic when topic option is checked");
+        return;
+      }
+    } else {
+      if (!text1.trim() || !text2.trim()) {
+        toast.error("Please provide text in both input fields");
+        return;
+      }
     }
 
     try {
@@ -223,15 +234,26 @@ const Index = () => {
       // Call the appropriate API endpoint based on the active tab
       const endpoint = API_ENDPOINTS[activeTab];
       
+      // Prepare request body based on active tab
+      let requestBody;
+      if (activeTab === 'stance-classification') {
+        requestBody = {
+          argument1: text1,
+          argument2: useTopic ? topic : ''
+        };
+      } else {
+        requestBody = {
+          argument1: text1,
+          argument2: text2
+        };
+      }
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          argument1: text1,
-          argument2: text2
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       if (!response.ok) {
