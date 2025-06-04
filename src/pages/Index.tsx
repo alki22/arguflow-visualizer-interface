@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
@@ -193,7 +192,8 @@ const API_ENDPOINTS = {
   'text-similarity': 'http://127.0.0.1:5000/compare',
   'topic-similarity': 'http://127.0.0.1:5000/topic-similarity',
   'extract-topics': 'http://127.0.0.1:5000/extract-topics',
-  'stance-classification': 'http://localhost:5000/stance-classification' // Using same endpoint for now
+  'stance-classification': 'http://localhost:5000/stance-classification',
+  'topic-extraction': 'http://127.0.0.1:5000/topic-extraction'
 };
 
 const Index = () => {
@@ -232,61 +232,140 @@ const Index = () => {
       setIsLoading(true);
       setResult(null);
       
-      // Call the appropriate API endpoint based on the active tab
-      const endpoint = API_ENDPOINTS[activeTab];
-      
-      // Prepare request body based on active tab
-      let requestBody;
+      // Special handling for stance classification
       if (activeTab === 'stance-classification') {
-        requestBody = {
-          argument1: text1,
-          argument2: useTopic ? topic : ''
-        };
+        if (!useTopic || !topic.trim()) {
+          // No topic provided, extract topics first
+          const topicExtractionResponse = await fetch(API_ENDPOINTS['topic-extraction'], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              argument: text1
+            }),
+          });
+          
+          if (!topicExtractionResponse.ok) {
+            throw new Error(`Topic extraction failed with status: ${topicExtractionResponse.status}`);
+          }
+          
+          const topicData = await topicExtractionResponse.json();
+          
+          if (topicData.status === 'success' && topicData.result && topicData.result.topics) {
+            const extractedTopics = topicData.result.topics;
+            
+            // Run stance classification for each extracted topic
+            const stanceResults = [];
+            
+            for (const extractedTopic of extractedTopics) {
+              const stanceResponse = await fetch(API_ENDPOINTS['stance-classification'], {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  argument1: text1,
+                  argument2: extractedTopic
+                }),
+              });
+              
+              if (stanceResponse.ok) {
+                const stanceData = await stanceResponse.json();
+                if (stanceData.status === 'success' && stanceData.result) {
+                  stanceResults.push({
+                    topic: extractedTopic,
+                    stance: stanceData.result.stance,
+                    justification: stanceData.result.justification
+                  });
+                }
+              }
+            }
+            
+            // Format the results
+            let formattedResult = `Extracted Topics and Stance Analysis:\n\n`;
+            stanceResults.forEach((result, index) => {
+              formattedResult += `${index + 1}. Topic: "${result.topic}"\n`;
+              formattedResult += `   Stance: ${result.stance}\n`;
+              formattedResult += `   Justification: ${result.justification}\n\n`;
+            });
+            
+            setResult(formattedResult.trim());
+          } else {
+            throw new Error("Failed to extract topics from the text");
+          }
+        } else {
+          // Topic provided, run stance classification directly
+          const response = await fetch(API_ENDPOINTS['stance-classification'], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              argument1: text1,
+              argument2: topic
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`API request failed with status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          if (data.status === 'success' && data.result) {
+            const formattedResult = `${data.result.stance} \n${data.result.justification}`;
+            setResult(formattedResult);
+          } else {
+            throw new Error("Invalid API response format");
+          }
+        }
       } else {
-        requestBody = {
+        // Call the appropriate API endpoint based on the active tab
+        const endpoint = API_ENDPOINTS[activeTab];
+        
+        // Prepare request body based on active tab
+        const requestBody = {
           argument1: text1,
           argument2: text2
         };
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed with status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.status === 'success' && data.result) {
-        // Format the result based on the active tab
-        let formattedResult;
         
-        switch(activeTab) {
-          case 'text-similarity':
-            formattedResult = formatSimilarityOutput(data.result);
-            break;
-          case 'topic-similarity':
-            formattedResult = formatTopicSimilarityOutput(data.result);
-            break;
-          case 'stance-classification':
-            formattedResult = `${data.result.stance} \n${data.result.justification}`;
-            break;
-          default:
-            const similarityScore = data.result.overall_similarity;
-            const scorePercent = Math.round(similarityScore * 100);
-            formattedResult = `Similarity score: ${scorePercent}%`;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status: ${response.status}`);
         }
         
-        // Store the formatted result
-        setResult(formattedResult);
-      } else {
-        throw new Error("Invalid API response format");
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.result) {
+          // Format the result based on the active tab
+          let formattedResult;
+          
+          switch(activeTab) {
+            case 'text-similarity':
+              formattedResult = formatSimilarityOutput(data.result);
+              break;
+            case 'topic-similarity':
+              formattedResult = formatTopicSimilarityOutput(data.result);
+              break;
+            default:
+              const similarityScore = data.result.overall_similarity;
+              const scorePercent = Math.round(similarityScore * 100);
+              formattedResult = `Similarity score: ${scorePercent}%`;
+          }
+          
+          // Store the formatted result
+          setResult(formattedResult);
+        } else {
+          throw new Error("Invalid API response format");
+        }
       }
       
     } catch (error) {
