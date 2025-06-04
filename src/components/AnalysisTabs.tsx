@@ -23,8 +23,8 @@ interface AnalysisTabsProps {
 
 const tabDescriptions = {
   'text-similarity': 'Compare two texts to analyze their linguistic similarity based on shared vocabulary and structure.',
-  'topic-similarity': 'Analyze two texts to determine similarity in topics, themes, and subject matter.',
-  'stance-classification': 'Determine if the second text agrees, disagrees, or is neutral with respect to the first text.'
+  'topic-similarity': 'Analyze two arguments to determine similarity in topics',
+  'stance-classification': 'Determine if the argument is for, against, or is neutral with respect to the given topic. If no topic is provided, the system will extract the topic from the argument.'
 };
 
 const AnalysisTabs = ({
