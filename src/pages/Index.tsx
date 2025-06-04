@@ -192,6 +192,7 @@ export function formatTopicSimilarityLLMOutput(response: any): string {
 const API_ENDPOINTS = {
   'text-similarity': 'http://127.0.0.1:5000/compare',
   'topic-similarity': 'http://127.0.0.1:5000/topic-similarity',
+  'extract-topics': 'http://127.0.0.1:5000/extract-topics',
   'stance-classification': 'http://localhost:5000/stance-classification' // Using same endpoint for now
 };
 
