@@ -190,10 +190,10 @@ export function formatTopicSimilarityLLMOutput(response: any): string {
 // API endpoints for Flask backend
 const API_ENDPOINTS = {
   'text-similarity': 'http://127.0.0.1:5000/compare',
-  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity',
+  //'topic-similarity': 'http://127.0.0.1:5000/topic-similarity',
   'extract-topics': 'http://127.0.0.1:5000/extract-topics',
   'stance-classification': 'http://localhost:5000/stance-classification',
-  'topic-extraction': 'http://127.0.0.1:5000/topic-extraction'
+  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity-llm'
 };
 
 const Index = () => {
@@ -236,7 +236,7 @@ const Index = () => {
       if (activeTab === 'stance-classification') {
         if (!useTopic || !topic.trim()) {
           // No topic provided, extract topics first
-          const topicExtractionResponse = await fetch(API_ENDPOINTS['topic-extraction'], {
+          const topicExtractionResponse = await fetch(API_ENDPOINTS['extract-topics'], {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -353,7 +353,7 @@ const Index = () => {
               formattedResult = formatSimilarityOutput(data.result);
               break;
             case 'topic-similarity':
-              formattedResult = formatTopicSimilarityOutput(data.result);
+              formattedResult = formatTopicSimilarityLLMOutput(data.result);
               break;
             default:
               const similarityScore = data.result.overall_similarity;
