@@ -35,13 +35,12 @@ const AnalysisControls = ({
 }: AnalysisControlsProps) => {
   const isStanceClassification = activeTab === 'stance-classification';
   const isReasoningType = activeTab === 'reasoning-type-classification';
-  const isGlobalSimilarity = activeTab === 'global-similarity-analysis';
-  const isSingleTextTab = isStanceClassification || isReasoningType || isGlobalSimilarity;
+  const isSingleTextTab = isStanceClassification || isReasoningType;
 
   return (
     <div className="space-y-6">
       {isSingleTextTab ? (
-        // Single text layout for stance classification, reasoning type, and global similarity
+        // Single text layout for stance classification and reasoning type
         <div className="space-y-4">
           <TextForm
             id="text1"
@@ -79,7 +78,7 @@ const AnalysisControls = ({
           )}
         </div>
       ) : (
-        // Default two-text layout for other tabs
+        // Default two-text layout for other tabs (including global similarity)
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextForm
             id="text1"
