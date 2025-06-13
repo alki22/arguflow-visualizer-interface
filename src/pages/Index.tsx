@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
@@ -229,7 +228,7 @@ const Index = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            argument: text1
+            argument1: text1
           }),
         });
         
@@ -354,7 +353,7 @@ const Index = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              argument: text1
+              argument1: text1
             }),
           });
           
@@ -368,34 +367,36 @@ const Index = () => {
           console.warn("Reasoning type classification failed:", error);
         }
         
-        // Format the global similarity results
-        let formattedResult = "Global Similarity Analysis Results:\n\n";
+        // Format the global similarity results with individual titles and scores
+        let formattedResult = "";
         
+        formattedResult += "Text Similarity\n";
         if (overallSimilarity !== null) {
-          formattedResult += `• Text Similarity (Overall): ${overallSimilarity.toFixed(4)}\n`;
+          formattedResult += `${overallSimilarity.toFixed(4)}\n\n`;
         } else {
-          formattedResult += `• Text Similarity (Overall): Failed to retrieve\n`;
+          formattedResult += `Failed to retrieve\n\n`;
         }
         
+        formattedResult += "Topic Similarity\n";
         if (topSimilarityScore !== null) {
-          formattedResult += `• Topic Similarity (Top Score): ${topSimilarityScore.toFixed(4)}\n`;
+          formattedResult += `${topSimilarityScore.toFixed(4)}\n\n`;
         } else {
-          formattedResult += `• Topic Similarity (Top Score): Failed to retrieve\n`;
+          formattedResult += `Failed to retrieve\n\n`;
         }
         
+        formattedResult += "Stance Classification\n";
         if (stanceResult) {
-          formattedResult += `• Stance Classification: ${stanceResult}\n`;
+          formattedResult += `${stanceResult}\n\n`;
         } else {
-          formattedResult += `• Stance Classification: Failed to retrieve\n`;
+          formattedResult += `Failed to retrieve\n\n`;
         }
         
+        formattedResult += "Reasoning Type\n";
         if (reasoningType) {
-          formattedResult += `• Reasoning Type: ${reasoningType}\n`;
+          formattedResult += `${reasoningType}`;
         } else {
-          formattedResult += `• Reasoning Type: Failed to retrieve\n`;
+          formattedResult += `Failed to retrieve`;
         }
-        
-        formattedResult += `\nInterpretation: Global analysis combining multiple similarity dimensions and argument characteristics.`;
         
         setResult(formattedResult);
         
