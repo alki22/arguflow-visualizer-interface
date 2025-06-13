@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -44,13 +45,15 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
     }
 
     return (
-      <div className={cn("mt-6 animate-fade-in", className)}>
-        <h3 className="text-lg font-medium mb-6">Analysis Result</h3>
-        <div className="space-y-6">
+      <div className={cn("mt-6 animate-fade-in space-y-4", className)}>
+        <h3 className="text-lg font-medium mb-4">Global Similarity Analysis Results</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {parsedResults.map((item, index) => (
             <div key={index} className="space-y-2">
-              <h4 className="text-base font-medium">{item.title}</h4>
-              <div className="code-block p-4 text-center font-mono text-lg">
+              <label className="text-sm font-medium text-muted-foreground">
+                {item.title}
+              </label>
+              <div className="code-block p-3 text-center font-mono text-lg">
                 {item.value}
               </div>
             </div>
