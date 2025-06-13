@@ -191,10 +191,10 @@ export function formatTopicSimilarityLLMOutput(response: any): string {
 // API endpoints for Flask backend
 const API_ENDPOINTS = {
   'text-similarity': 'http://127.0.0.1:5000/compare',
-  //'topic-similarity': 'http://127.0.0.1:5000/topic-similarity',
   'extract-topics': 'http://127.0.0.1:5000/extract-topics',
   'stance-classification': 'http://localhost:5000/stance-classification',
-  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity-llm'
+  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity-llm',
+  'reasoning-type-classification': 'http://127.0.0.1:5000/reasoning-type-classification'
 };
 
 const Index = () => {
@@ -212,34 +212,199 @@ const Index = () => {
   };
 
   const handleAnalyze = async () => {
-    // Handle new tab types with hardcoded outputs
+    // Handle reasoning type classification
     if (activeTab === 'reasoning-type-classification') {
       if (!text1.trim()) {
         toast.error("Please provide text for analysis");
         return;
       }
       
-      setIsLoading(true);
-      // Simulate loading time
-      setTimeout(() => {
-        setResult("Reasoning Type: Deductive Reasoning\n\nAnalysis: The provided text demonstrates deductive reasoning patterns, starting from general principles and moving toward specific conclusions. The argument structure follows a logical progression from premises to conclusion.\n\nConfidence Score: 0.87");
+      try {
+        setIsLoading(true);
+        setResult(null);
+        
+        const response = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            argument: text1
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.result) {
+          const formattedResult = `Reasoning Type: ${data.result.reasoning_type}\n\nJustification: ${data.result.justification}`;
+          setResult(formattedResult);
+        } else {
+          throw new Error("Invalid API response format");
+        }
+      } catch (error) {
+        console.error("Reasoning type analysis error:", error);
+        toast.error(`An error occurred during analysis: ${error}. Please try again.`);
+      } finally {
         setIsLoading(false);
-      }, 2000);
+      }
       return;
     }
 
+    // Handle global similarity analysis
     if (activeTab === 'global-similarity-analysis') {
-      if (!text1.trim()) {
-        toast.error("Please provide text for analysis");
+      if (!text1.trim() || !text2.trim()) {
+        toast.error("Please provide both texts for analysis");
         return;
       }
       
-      setIsLoading(true);
-      // Simulate loading time
-      setTimeout(() => {
-        setResult("Global Similarity Analysis Results:\n\n• Lexical Similarity: 0.76\n• Semantic Similarity: 0.82\n• Structural Similarity: 0.68\n• Topic Coherence: 0.91\n• Argumentative Similarity: 0.73\n\nOverall Global Similarity Score: 0.78\n\nInterpretation: The texts show high semantic and topic coherence, indicating strong conceptual alignment. Moderate structural similarity suggests different presentation styles while maintaining similar core arguments.");
+      try {
+        setIsLoading(true);
+        setResult(null);
+        
+        // 1. Get overall similarity from /compare
+        const compareResponse = await fetch(API_ENDPOINTS['text-similarity'], {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            argument1: text1,
+            argument2: text2
+          }),
+        });
+        
+        if (!compareResponse.ok) {
+          throw new Error(`Text similarity API failed with status: ${compareResponse.status}`);
+        }
+        
+        const compareData = await compareResponse.json();
+        const overallSimilarity = compareData.status === 'success' ? compareData.result.overall_similarity : null;
+        
+        // 2. Get topic similarity from /topic-similarity-llm
+        const topicSimilarityResponse = await fetch(API_ENDPOINTS['topic-similarity'], {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            argument1: text1,
+            argument2: text2
+          }),
+        });
+        
+        if (!topicSimilarityResponse.ok) {
+          throw new Error(`Topic similarity API failed with status: ${topicSimilarityResponse.status}`);
+        }
+        
+        const topicSimilarityData = await topicSimilarityResponse.json();
+        const topSimilarityScore = topicSimilarityData.status === 'success' ? topicSimilarityData.result.top_similarity_score : null;
+        
+        // 3. Get stance classification (extract topic first)
+        let stanceResult = null;
+        try {
+          const topicExtractionResponse = await fetch(API_ENDPOINTS['extract-topics'], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              argument: text1
+            }),
+          });
+          
+          if (topicExtractionResponse.ok) {
+            const topicData = await topicExtractionResponse.json();
+            
+            if (topicData.status === 'success' && topicData.result && topicData.result.topics && topicData.result.topics.length > 0) {
+              const extractedTopic = topicData.result.topics[0]; // Use first extracted topic
+              
+              const stanceResponse = await fetch(API_ENDPOINTS['stance-classification'], {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  argument1: text1,
+                  argument2: extractedTopic
+                }),
+              });
+              
+              if (stanceResponse.ok) {
+                const stanceData = await stanceResponse.json();
+                if (stanceData.status === 'success' && stanceData.result) {
+                  stanceResult = stanceData.result.stance;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn("Stance classification failed:", error);
+        }
+        
+        // 4. Get reasoning type classification
+        let reasoningType = null;
+        try {
+          const reasoningResponse = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              argument: text1
+            }),
+          });
+          
+          if (reasoningResponse.ok) {
+            const reasoningData = await reasoningResponse.json();
+            if (reasoningData.status === 'success' && reasoningData.result) {
+              reasoningType = reasoningData.result.reasoning_type;
+            }
+          }
+        } catch (error) {
+          console.warn("Reasoning type classification failed:", error);
+        }
+        
+        // Format the global similarity results
+        let formattedResult = "Global Similarity Analysis Results:\n\n";
+        
+        if (overallSimilarity !== null) {
+          formattedResult += `• Text Similarity (Overall): ${overallSimilarity.toFixed(4)}\n`;
+        } else {
+          formattedResult += `• Text Similarity (Overall): Failed to retrieve\n`;
+        }
+        
+        if (topSimilarityScore !== null) {
+          formattedResult += `• Topic Similarity (Top Score): ${topSimilarityScore.toFixed(4)}\n`;
+        } else {
+          formattedResult += `• Topic Similarity (Top Score): Failed to retrieve\n`;
+        }
+        
+        if (stanceResult) {
+          formattedResult += `• Stance Classification: ${stanceResult}\n`;
+        } else {
+          formattedResult += `• Stance Classification: Failed to retrieve\n`;
+        }
+        
+        if (reasoningType) {
+          formattedResult += `• Reasoning Type: ${reasoningType}\n`;
+        } else {
+          formattedResult += `• Reasoning Type: Failed to retrieve\n`;
+        }
+        
+        formattedResult += `\nInterpretation: Global analysis combining multiple similarity dimensions and argument characteristics.`;
+        
+        setResult(formattedResult);
+        
+      } catch (error) {
+        console.error("Global similarity analysis error:", error);
+        toast.error(`An error occurred during analysis: ${error}. Please try again.`);
+      } finally {
         setIsLoading(false);
-      }, 2500);
+      }
       return;
     }
 
