@@ -30,6 +30,39 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
 
   if (!result) return null;
 
+  // Handle Global Similarity Analysis with separate fields
+  if (activeTab === 'global-similarity-analysis' && typeof result === 'string') {
+    const sections = result.split('\n\n').filter(section => section.trim());
+    const parsedResults: { title: string; value: string }[] = [];
+    
+    for (let i = 0; i < sections.length; i += 2) {
+      if (i + 1 < sections.length) {
+        parsedResults.push({
+          title: sections[i],
+          value: sections[i + 1]
+        });
+      }
+    }
+
+    return (
+      <div className={cn("mt-6 animate-fade-in space-y-4", className)}>
+        <h3 className="text-lg font-medium mb-4">Global Similarity Analysis Results</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {parsedResults.map((item, index) => (
+            <div key={index} className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                {item.title}
+              </label>
+              <div className="code-block p-3 text-center font-mono text-lg">
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Handle text similarity with detailed results
   if (activeTab === 'text-similarity' && typeof result === 'object' && 'basic' in result) {
     return (
