@@ -44,15 +44,18 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
     }
 
     return (
-      <div className={cn("mt-6 animate-fade-in space-y-6", className)}>
-        {parsedResults.map((item, index) => (
-          <div key={index} className="space-y-2">
-            <h3 className="text-lg font-medium">{item.title}</h3>
-            <div className="code-block p-4 text-center font-mono text-lg">
-              {item.value}
+      <div className={cn("mt-6 animate-fade-in", className)}>
+        <h3 className="text-lg font-medium mb-6">Analysis Result</h3>
+        <div className="space-y-6">
+          {parsedResults.map((item, index) => (
+            <div key={index} className="space-y-2">
+              <h4 className="text-base font-medium">{item.title}</h4>
+              <div className="code-block p-4 text-center font-mono text-lg">
+                {item.value}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
