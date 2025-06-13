@@ -32,27 +32,48 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
   // Handle Global Similarity Analysis with separate fields
   if (activeTab === 'global-similarity-analysis' && typeof result === 'string') {
     const sections = result.split('\n\n').filter(section => section.trim());
-    const parsedResults: { title: string; value: string }[] = [];
     
-    for (let i = 0; i < sections.length; i += 2) {
-      if (i + 1 < sections.length) {
-        parsedResults.push({
-          title: sections[i],
-          value: sections[i + 1]
-        });
+    // Create a fixed structure for the four components we expect
+    const components = [
+      { title: 'Text similarity', value: '' },
+      { title: 'Topic Similarity', value: '' },
+      { title: 'Stance', value: '' },
+      { title: 'Reasoning type', value: '' }
+    ];
+    
+    // Parse the sections to extract values (skip the title lines, take the value lines)
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i].trim();
+      const lines = section.split('\n');
+      
+      if (lines.length >= 2) {
+        const title = lines[0].trim();
+        const value = lines[1].trim();
+        
+        if (title.includes('Text Similarity')) {
+          components[0].value = value;
+        } else if (title.includes('Topic Similarity')) {
+          components[1].value = value;
+        } else if (title.includes('Stance')) {
+          components[2].value = value;
+        } else if (title.includes('Reasoning Type')) {
+          components[3].value = value;
+        }
       }
     }
 
     return (
-      <div className={cn("mt-6 animate-fade-in space-y-6", className)}>
-        {parsedResults.map((item, index) => (
-          <div key={index} className="space-y-2">
-            <h3 className="text-lg font-medium">{item.title}</h3>
-            <div className="code-block p-4 text-center font-mono text-lg">
-              {item.value}
+      <div className={cn("mt-6 animate-fade-in", className)}>
+        <div className="grid grid-cols-2 gap-6">
+          {components.map((item, index) => (
+            <div key={index} className="space-y-2">
+              <h3 className="text-base font-medium text-gray-700">{item.title}</h3>
+              <div className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm min-h-[60px] flex items-center justify-center">
+                <span className="font-mono text-lg font-medium">{item.value || 'N/A'}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }

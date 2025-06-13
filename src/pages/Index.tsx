@@ -211,10 +211,10 @@ const Index = () => {
   };
 
   const handleAnalyze = async () => {
-    // Handle reasoning type classification
+    // Handle reasoning type classification - analyze both arguments separately
     if (activeTab === 'reasoning-type-classification') {
-      if (!text1.trim()) {
-        toast.error("Please provide text for analysis");
+      if (!text1.trim() || !text2.trim()) {
+        toast.error("Please provide both texts for analysis");
         return;
       }
       
@@ -222,7 +222,8 @@ const Index = () => {
         setIsLoading(true);
         setResult(null);
         
-        const response = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+        // Analyze first argument
+        const response1 = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -232,14 +233,26 @@ const Index = () => {
           }),
         });
         
-        if (!response.ok) {
-          throw new Error(`API request failed with status: ${response.status}`);
+        // Analyze second argument
+        const response2 = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            argument1: text2
+          }),
+        });
+        
+        if (!response1.ok || !response2.ok) {
+          throw new Error(`API request failed`);
         }
         
-        const data = await response.json();
+        const data1 = await response1.json();
+        const data2 = await response2.json();
         
-        if (data.status === 'success' && data.result) {
-          const formattedResult = `Reasoning Type: ${data.result.reasoning_type}\n\nJustification: ${data.result.justification}`;
+        if (data1.status === 'success' && data1.result && data2.status === 'success' && data2.result) {
+          const formattedResult = `First argument reasoning type: ${data1.result.reasoning_type}\n\nSecond argument reasoning type: ${data2.result.reasoning_type}`;
           setResult(formattedResult);
         } else {
           throw new Error("Invalid API response format");
@@ -344,10 +357,12 @@ const Index = () => {
           console.warn("Stance classification failed:", error);
         }
         
-        // 4. Get reasoning type classification
-        let reasoningType = null;
+        // 4. Get reasoning type classification for both arguments
+        let reasoningType1 = null;
+        let reasoningType2 = null;
+        
         try {
-          const reasoningResponse = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+          const reasoningResponse1 = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -357,10 +372,27 @@ const Index = () => {
             }),
           });
           
-          if (reasoningResponse.ok) {
-            const reasoningData = await reasoningResponse.json();
-            if (reasoningData.status === 'success' && reasoningData.result) {
-              reasoningType = reasoningData.result.reasoning_type;
+          const reasoningResponse2 = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              argument1: text2
+            }),
+          });
+          
+          if (reasoningResponse1.ok) {
+            const reasoningData1 = await reasoningResponse1.json();
+            if (reasoningData1.status === 'success' && reasoningData1.result) {
+              reasoningType1 = reasoningData1.result.reasoning_type;
+            }
+          }
+          
+          if (reasoningResponse2.ok) {
+            const reasoningData2 = await reasoningResponse2.json();
+            if (reasoningData2.status === 'success' && reasoningData2.result) {
+              reasoningType2 = reasoningData2.result.reasoning_type;
             }
           }
         } catch (error) {
@@ -392,8 +424,12 @@ const Index = () => {
         }
         
         formattedResult += "Reasoning Type\n";
-        if (reasoningType) {
-          formattedResult += `${reasoningType}`;
+        if (reasoningType1 && reasoningType2) {
+          formattedResult += `Arg1: ${reasoningType1}, Arg2: ${reasoningType2}`;
+        } else if (reasoningType1) {
+          formattedResult += `Arg1: ${reasoningType1}, Arg2: Failed to retrieve`;
+        } else if (reasoningType2) {
+          formattedResult += `Arg1: Failed to retrieve, Arg2: ${reasoningType2}`;
         } else {
           formattedResult += `Failed to retrieve`;
         }
