@@ -235,10 +235,10 @@ const Index = () => {
   };
 
   const handleAnalyze = async () => {
-    // Handle reasoning type classification - analyze both arguments separately
+    // Handle reasoning type classification - analyze single argument
     if (activeTab === 'reasoning-type-classification') {
-      if (!text1.trim() || !text2.trim()) {
-        toast.error("Please provide both texts for analysis");
+      if (!text1.trim()) {
+        toast.error("Please provide text for analysis");
         return;
       }
       
@@ -246,8 +246,8 @@ const Index = () => {
         setIsLoading(true);
         setResult(null);
         
-        // Analyze first argument
-        const response1 = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
+        // Analyze the argument
+        const response = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -257,35 +257,17 @@ const Index = () => {
           }),
         });
         
-        // Analyze second argument
-        const response2 = await fetch(API_ENDPOINTS['reasoning-type-classification'], {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            argument1: text2
-          }),
-        });
-        
-        if (!response1.ok || !response2.ok) {
+        if (!response.ok) {
           throw new Error(`API request failed`);
         }
         
-        const data1 = await response1.json();
-        const data2 = await response2.json();
+        const data = await response.json();
         
-        if (data1.status === 'success' && data1.result && data2.status === 'success' && data2.result) {
-          // Format with reasoning type and justification for both arguments
-          let formattedResult = `First argument:\n`;
-          formattedResult += `Reasoning type: ${data1.result.reasoning_type}\n`;
-          if (data1.result.justification) {
-            formattedResult += `Justification: ${data1.result.justification}\n`;
-          }
-          formattedResult += `\nSecond argument:\n`;
-          formattedResult += `Reasoning type: ${data2.result.reasoning_type}\n`;
-          if (data2.result.justification) {
-            formattedResult += `Justification: ${data2.result.justification}`;
+        if (data.status === 'success' && data.result) {
+          // Format with reasoning type and justification for the argument
+          let formattedResult = `Reasoning type: ${data.result.reasoning_type}\n`;
+          if (data.result.justification) {
+            formattedResult += `Justification: ${data.result.justification}`;
           }
           
           setResult(formattedResult);
