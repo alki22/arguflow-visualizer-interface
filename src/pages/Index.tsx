@@ -14,7 +14,28 @@ function formatSimilarityOutput(result: {
 }): { basic: string; details: string } {
   const basic = `Overall Similarity: ${result.overall_similarity.toFixed(4)}`;
   
-  let details = "Semantic Feature Similarities:";
+  // Feature descriptions dictionary
+  const featureDescriptions = {
+    "global": "Overall sentence similarity",
+    "Concepts": "Similarity with respect to concepts in sentences",
+    "Frames": "Similarity with respect to predicates in sentences",
+    "Named Ent.": "Similarity with respect to named entities in sentences",
+    "Negations": "Similarity with respect to negation structure of sentences",
+    "Reentrancies": "Similarity with respect to coreference structure of sentences",
+    "SRL": "Similarity with respect to semantic role structure of sentences",
+    "Smatch": "Similarity with respect to overall semantic meaning structures",
+    "Unlabeled": "Similarity with respect to semantic meaning structures minus relation labels",
+    "max_indegree_sim": "Similarity with respect to connected nodes (in-degree) in meaning space",
+    "max_outdegree_sim": "Similarity with respect to connected nodes (out-degree) in meaning space",
+    "max_degree_sim": "Similarity with respect to connected nodes (degree) in meaning space",
+    "root_sim": "Similarity with respect to root nodes in semantic graphs",
+    "quant_sim": "Similarity with respect to quantificational structure",
+    "score_wlk": "Similarity measured with contextual Weisfeiler Leman Kernel",
+    "score_wwlk": "Similarity measured with Wasserstein Weisfeiler Leman Kernel",
+    "residual": "Residual similarity information not captured by other features"
+  };
+  
+  let details = "Semantic Feature Similarities:\n";
   
   // Get all feature similarities excluding global and residual
   const features = Object.fromEntries(
@@ -26,9 +47,12 @@ function formatSimilarityOutput(result: {
   const sortedFeatures = Object.entries(features)
     .sort(([_, a], [__, b]) => b - a);
   
-  // Add each feature line
+  // Add each feature line with description
   for (const [feature, score] of sortedFeatures) {
-    details += `\n  - ${feature.trim()}: ${score.toFixed(4)}`;
+    const featureName = feature.trim();
+    const description = featureDescriptions[featureName] || "Feature description not available";
+    details += `\n  - ${featureName}: ${description}`;
+    details += `\n    ${score.toFixed(4)}\n`;
   }
   
   return { basic, details };
@@ -189,11 +213,11 @@ export function formatTopicSimilarityLLMOutput(response: any): string {
 
 // API endpoints for Flask backend
 const API_ENDPOINTS = {
-  'text-similarity': 'http://127.0.0.1:5000/compare',
-  'extract-topics': 'http://127.0.0.1:5000/extract-topics',
-  'stance-classification': 'http://localhost:5000/stance-classification',
-  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity-llm',
-  'reasoning-type-classification': 'http://127.0.0.1:5000/reasoning-type-classification'
+  'text-similarity': 'http://134.59.132.34:5000/compare',
+  'extract-topics': 'http://134.59.132.34:5000/extract-topics',
+  'stance-classification': 'http://134.59.132.34:5000/stance-classification',
+  'topic-similarity': 'http://134.59.132.34:5000/topic-similarity-llm',
+  'reasoning-type-classification': 'http://134.59.132.34:5000/reasoning-type-classification'
 };
 
 const Index = () => {
