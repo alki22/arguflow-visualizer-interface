@@ -276,7 +276,18 @@ const Index = () => {
         const data2 = await response2.json();
         
         if (data1.status === 'success' && data1.result && data2.status === 'success' && data2.result) {
-          const formattedResult = `First argument reasoning type: ${data1.result.reasoning_type}\n\nSecond argument reasoning type: ${data2.result.reasoning_type}`;
+          // Format with reasoning type and justification for both arguments
+          let formattedResult = `First argument:\n`;
+          formattedResult += `Reasoning type: ${data1.result.reasoning_type}\n`;
+          if (data1.result.justification) {
+            formattedResult += `Justification: ${data1.result.justification}\n`;
+          }
+          formattedResult += `\nSecond argument:\n`;
+          formattedResult += `Reasoning type: ${data2.result.reasoning_type}\n`;
+          if (data2.result.justification) {
+            formattedResult += `Justification: ${data2.result.justification}`;
+          }
+          
           setResult(formattedResult);
         } else {
           throw new Error("Invalid API response format");
