@@ -213,11 +213,11 @@ export function formatTopicSimilarityLLMOutput(response: any): string {
 
 // API endpoints for Flask backend
 const API_ENDPOINTS = {
-  'text-similarity': 'http://localhost:5000/compare',
-  'extract-topics': 'http://localhost:5000/extract-topics',
-  'stance-classification': 'http://localhost:5000/stance-classification',
-  'topic-similarity': 'http://localhost:5000/topic-similarity-llm',
-  'reasoning-type-classification': 'http://localhost:5000/reasoning-type-classification'
+  'text-similarity': 'http://127.0.0.1:5000/compare',
+  'extract-topics': 'http://127.0.0.1:5000/extract-topics',
+  'stance-classification': 'http://127.0.0.1:5000/stance-classification',
+  'topic-similarity': 'http://127.0.0.1:5000/topic-similarity-llm',
+  'reasoning-type-classification': 'http://127.0.0.1:5000/reasoning-type-classification'
 };
 
 const Index = () => {
