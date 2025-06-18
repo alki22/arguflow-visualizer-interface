@@ -225,7 +225,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<string>('argumentative-structure-analysis');
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
-  const [result, setResult] = useState<string | { basic: string; details: string } | null>(null);
+  const [result, setResult] = useState<string | { basic: string; details: string } | any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [useTopic, setUseTopic] = useState(false);
   const [topic, setTopic] = useState('');
