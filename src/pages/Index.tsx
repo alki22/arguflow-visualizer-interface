@@ -217,11 +217,12 @@ const API_ENDPOINTS = {
   'extract-topics': 'http://134.59.132.34:5000/extract-topics',
   'stance-classification': 'http://134.59.132.34:5000/stance-classification',
   'topic-similarity': 'http://134.59.132.34:5000/topic-similarity-llm',
-  'reasoning-type-classification': 'http://134.59.132.34:5000/reasoning-type-classification'
+  'reasoning-type-classification': 'http://134.59.132.34:5000/reasoning-type-classification',
+  'extract-premise-claim': 'http://134.59.132.34:5000/extract-premise-claim'
 };
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<string>('text-similarity');
+  const [activeTab, setActiveTab] = useState<string>('argumentative-structure-analysis');
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
   const [result, setResult] = useState<string | { basic: string; details: string } | null>(null);
@@ -235,6 +236,168 @@ const Index = () => {
   };
 
   const handleAnalyze = async () => {
+    // Handle argumentative structure analysis
+    if (activeTab === 'argumentative-structure-analysis') {
+      if (!text1.trim() || !text2.trim()) {
+        toast.error("Please provide both arguments for analysis");
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        setResult(null);
+        
+        // Extract premise-claim for both arguments
+        const [premiseClaimResponse1, premiseClaimResponse2] = await Promise.all([
+          fetch(API_ENDPOINTS['extract-premise-claim'], {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ argument: text1 }),
+          }),
+          fetch(API_ENDPOINTS['extract-premise-claim'], {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ argument: text2 }),
+          })
+        ]);
+        
+        if (!premiseClaimResponse1.ok || !premiseClaimResponse2.ok) {
+          throw new Error('Failed to extract premise-claim data');
+        }
+        
+        const [premiseClaimData1, premiseClaimData2] = await Promise.all([
+          premiseClaimResponse1.json(),
+          premiseClaimResponse2.json()
+        ]);
+        
+        // Process each argument
+        const processArgument = async (premiseClaimData: any, originalText: string) => {
+          const result = {
+            premise: '-',
+            premiseTopic: '-',
+            claim: '-',
+            claimTopic: '-',
+            argumentTopic: '-',
+            stance: '-',
+            reasoningType: '-'
+          };
+          
+          if (premiseClaimData.status === 'success' && premiseClaimData.result) {
+            const { premise, claim, has_premise, has_claim } = premiseClaimData.result;
+            
+            // Set premise and claim
+            result.premise = has_premise ? premise : '-';
+            result.claim = has_claim ? claim : '-';
+            
+            // Get topics for premise and claim if they exist
+            if (has_premise && premise) {
+              try {
+                const premiseTopicResponse = await fetch(API_ENDPOINTS['extract-topics'], {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ argument: premise }),
+                });
+                if (premiseTopicResponse.ok) {
+                  const premiseTopicData = await premiseTopicResponse.json();
+                  if (premiseTopicData.status === 'success' && premiseTopicData.result?.topics?.[0]) {
+                    result.premiseTopic = premiseTopicData.result.topics[0];
+                  }
+                }
+              } catch (error) {
+                console.warn('Failed to extract premise topic:', error);
+              }
+            }
+            
+            if (has_claim && claim) {
+              try {
+                const claimTopicResponse = await fetch(API_ENDPOINTS['extract-topics'], {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ argument: claim }),
+                });
+                if (claimTopicResponse.ok) {
+                  const claimTopicData = await claimTopicResponse.json();
+                  if (claimTopicData.status === 'success' && claimTopicData.result?.topics?.[0]) {
+                    result.claimTopic = claimTopicData.result.topics[0];
+                  }
+                }
+              } catch (error) {
+                console.warn('Failed to extract claim topic:', error);
+              }
+            }
+          }
+          
+          // Get argument topic, stance, and reasoning type
+          try {
+            const [topicResponse, reasoningResponse] = await Promise.all([
+              fetch(API_ENDPOINTS['extract-topics'], {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ argument: originalText }),
+              }),
+              fetch(API_ENDPOINTS['reasoning-type-classification'], {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ argument1: originalText }),
+              })
+            ]);
+            
+            if (topicResponse.ok) {
+              const topicData = await topicResponse.json();
+              if (topicData.status === 'success' && topicData.result?.topics?.[0]) {
+                result.argumentTopic = topicData.result.topics[0];
+                
+                // Get stance using the extracted topic
+                try {
+                  const stanceResponse = await fetch(API_ENDPOINTS['stance-classification'], {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ argument1: originalText, argument2: topicData.result.topics[0] }),
+                  });
+                  if (stanceResponse.ok) {
+                    const stanceData = await stanceResponse.json();
+                    if (stanceData.status === 'success' && stanceData.result?.stance) {
+                      result.stance = stanceData.result.stance;
+                    }
+                  }
+                } catch (error) {
+                  console.warn('Failed to get stance:', error);
+                }
+              }
+            }
+            
+            if (reasoningResponse.ok) {
+              const reasoningData = await reasoningResponse.json();
+              if (reasoningData.status === 'success' && reasoningData.result?.reasoning_type) {
+                result.reasoningType = reasoningData.result.reasoning_type;
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to get additional argument analysis:', error);
+          }
+          
+          return result;
+        };
+        
+        const [argument1Data, argument2Data] = await Promise.all([
+          processArgument(premiseClaimData1, text1),
+          processArgument(premiseClaimData2, text2)
+        ]);
+        
+        setResult({
+          argument1: argument1Data,
+          argument2: argument2Data
+        });
+        
+      } catch (error) {
+        console.error("Argumentative structure analysis error:", error);
+        toast.error(`An error occurred during analysis: ${error}. Please try again.`);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     // Handle reasoning type classification - analyze single argument
     if (activeTab === 'reasoning-type-classification') {
       if (!text1.trim()) {

@@ -22,11 +22,12 @@ interface AnalysisTabsProps {
 }
 
 const tabDescriptions = {
+  'argumentative-structure-analysis': 'Extract and analyze the argumentative structure of two texts, including premises, claims, topics, stances, and reasoning types.',
+  'global-similarity-analysis': 'Perform a comprehensive similarity analysis across multiple dimensions.',
   'text-similarity': 'Compare two texts to analyze their linguistic similarity based on shared vocabulary and structure.',
   'topic-similarity': 'Analyze two arguments to determine similarity in topics',
   'stance-classification': 'Determine if the argument is for, against, or is neutral with respect to the given topic. If no topic is provided, the system will extract the topic from the argument.',
-  'reasoning-type-classification': 'Classify the type of reasoning used in the provided text.',
-  'global-similarity-analysis': 'Perform a comprehensive similarity analysis across multiple dimensions.'
+  'reasoning-type-classification': 'Classify the type of reasoning used in the provided text.'
 };
 
 const AnalysisTabs = ({
@@ -47,15 +48,19 @@ const AnalysisTabs = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="space-y-2 mb-6">
+        <TabsList className="grid grid-cols-1 w-full">
+          <TabsTrigger value="argumentative-structure-analysis">Argumentative Structure Analysis</TabsTrigger>
+        </TabsList>
+        
+        <TabsList className="grid grid-cols-1 w-full">
+          <TabsTrigger value="global-similarity-analysis">Global Similarity Analysis</TabsTrigger>
+        </TabsList>
+        
         <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="text-similarity">Text Similarity</TabsTrigger>
           <TabsTrigger value="topic-similarity">Topic Similarity</TabsTrigger>
           <TabsTrigger value="stance-classification">Stance Classification</TabsTrigger>
           <TabsTrigger value="reasoning-type-classification">Reasoning Type</TabsTrigger>
-        </TabsList>
-        
-        <TabsList className="grid grid-cols-1 w-full">
-          <TabsTrigger value="global-similarity-analysis">Global Similarity Analysis</TabsTrigger>
         </TabsList>
       </div>
       
