@@ -26,6 +26,7 @@ const tabDescriptions = {
   'topic-similarity': 'Analyze two arguments to determine similarity in topics',
   'stance-classification': 'Determine if the argument is for, against, or is neutral with respect to the given topic. If no topic is provided, the system will extract the topic from the argument.',
   'reasoning-type-classification': 'Classify the type of reasoning used in the provided text.',
+  'argumentative-structure-analysis': 'Extract and analyze the premise-claim structure of arguments, including topic analysis, stance, and reasoning type for each component.',
   'global-similarity-analysis': 'Perform a comprehensive similarity analysis across multiple dimensions.'
 };
 
@@ -52,6 +53,10 @@ const AnalysisTabs = ({
           <TabsTrigger value="topic-similarity">Topic Similarity</TabsTrigger>
           <TabsTrigger value="stance-classification">Stance Classification</TabsTrigger>
           <TabsTrigger value="reasoning-type-classification">Reasoning Type</TabsTrigger>
+        </TabsList>
+        
+        <TabsList className="grid grid-cols-1 w-full">
+          <TabsTrigger value="argumentative-structure-analysis">Argumentative Structure Analysis</TabsTrigger>
         </TabsList>
         
         <TabsList className="grid grid-cols-1 w-full">

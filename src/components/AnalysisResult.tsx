@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import ArgumentativeStructureResult from './ArgumentativeStructureResult';
 
 interface AnalysisResultProps {
-  result: string | { basic: string; details: string } | null;
+  result: string | { basic: string; details: string } | any | null;
   isLoading: boolean;
   activeTab: string;
   className?: string;
@@ -28,6 +29,18 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
   }
 
   if (!result) return null;
+
+  // Handle Argumentative Structure Analysis
+  if (activeTab === 'argumentative-structure-analysis' && typeof result === 'object' && result.argument1) {
+    return (
+      <ArgumentativeStructureResult
+        argument1={result.argument1}
+        argument2={result.argument2}
+        isLoading={isLoading}
+        className={className}
+      />
+    );
+  }
 
   // Handle Global Similarity Analysis with separate fields
   if (activeTab === 'global-similarity-analysis' && typeof result === 'string') {
