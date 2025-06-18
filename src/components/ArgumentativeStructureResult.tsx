@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface ArgumentativeStructureData {
   argument1: {
+    originalText: string;
     premise: string;
     premiseTopic: string;
     claim: string;
@@ -13,6 +14,7 @@ interface ArgumentativeStructureData {
     reasoningType: string;
   };
   argument2: {
+    originalText: string;
     premise: string;
     premiseTopic: string;
     claim: string;
@@ -20,6 +22,11 @@ interface ArgumentativeStructureData {
     argumentTopic: string;
     stance: string;
     reasoningType: string;
+  };
+  textSimilarity?: {
+    arguments: number;
+    premises: number;
+    claims: number;
   };
 }
 
@@ -47,6 +54,13 @@ const ArgumentativeStructureResult = ({ data, isLoading, className }: Argumentat
   const renderArgumentRow = (argumentData: ArgumentativeStructureData['argument1'], argumentLabel: string) => (
     <div key={argumentLabel} className="space-y-4">
       <h3 className="text-lg font-medium text-gray-800">{argumentLabel}</h3>
+      
+      {/* Original Text */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-gray-600 mb-2">Original Text:</h4>
+        <div className="text-sm text-gray-900 italic">{argumentData.originalText}</div>
+      </div>
+      
       <div className="grid grid-cols-3 gap-6">
         {/* Premise Column */}
         <div className="space-y-3">
@@ -111,6 +125,44 @@ const ArgumentativeStructureResult = ({ data, isLoading, className }: Argumentat
       <div className="space-y-8">
         {renderArgumentRow(data.argument1, 'Argument 1')}
         {renderArgumentRow(data.argument2, 'Argument 2')}
+        
+        {/* Text Similarity Section */}
+        {data.textSimilarity && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Text Similarity</h3>
+            <div className="grid grid-cols-3 gap-6">
+              {/* Premises Similarity */}
+              <div className="space-y-3">
+                <h4 className="text-base font-medium text-gray-700">Premises</h4>
+                <div className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm min-h-[80px] flex items-center justify-center">
+                  <span className="font-mono text-lg font-medium">
+                    {data.textSimilarity.premises !== null ? data.textSimilarity.premises.toFixed(4) : 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Claims Similarity */}
+              <div className="space-y-3">
+                <h4 className="text-base font-medium text-gray-700">Claims</h4>
+                <div className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm min-h-[80px] flex items-center justify-center">
+                  <span className="font-mono text-lg font-medium">
+                    {data.textSimilarity.claims !== null ? data.textSimilarity.claims.toFixed(4) : 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Arguments Similarity */}
+              <div className="space-y-3">
+                <h4 className="text-base font-medium text-gray-700">Arguments</h4>
+                <div className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm min-h-[80px] flex items-center justify-center">
+                  <span className="font-mono text-lg font-medium">
+                    {data.textSimilarity.arguments !== null ? data.textSimilarity.arguments.toFixed(4) : 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

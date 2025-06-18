@@ -273,6 +273,7 @@ const Index = () => {
         // Process each argument
         const processArgument = async (premiseClaimData: any, originalText: string) => {
           const result = {
+            originalText,
             premise: '-',
             premiseTopic: '-',
             claim: '-',
@@ -299,8 +300,9 @@ const Index = () => {
                 });
                 if (premiseTopicResponse.ok) {
                   const premiseTopicData = await premiseTopicResponse.json();
-                  if (premiseTopicData.status === 'success' && premiseTopicData.result?.topics?.[0]) {
-                    result.premiseTopic = premiseTopicData.result.topics[0];
+                  if (premiseTopicData.status === 'success' && premiseTopicData.result?.topics) {
+                    // Show all topics, not just the first one
+                    result.premiseTopic = premiseTopicData.result.topics.join(', ');
                   }
                 }
               } catch (error) {
@@ -317,8 +319,9 @@ const Index = () => {
                 });
                 if (claimTopicResponse.ok) {
                   const claimTopicData = await claimTopicResponse.json();
-                  if (claimTopicData.status === 'success' && claimTopicData.result?.topics?.[0]) {
-                    result.claimTopic = claimTopicData.result.topics[0];
+                  if (claimTopicData.status === 'success' && claimTopicData.result?.topics) {
+                    // Show all topics, not just the first one
+                    result.claimTopic = claimTopicData.result.topics.join(', ');
                   }
                 }
               } catch (error) {
@@ -344,10 +347,11 @@ const Index = () => {
             
             if (topicResponse.ok) {
               const topicData = await topicResponse.json();
-              if (topicData.status === 'success' && topicData.result?.topics?.[0]) {
-                result.argumentTopic = topicData.result.topics[0];
+              if (topicData.status === 'success' && topicData.result?.topics) {
+                // Show all topics, not just the first one
+                result.argumentTopic = topicData.result.topics.join(', ');
                 
-                // Get stance using the extracted topic
+                // Get stance using the first extracted topic
                 try {
                   const stanceResponse = await fetch(API_ENDPOINTS['stance-classification'], {
                     method: 'POST',
@@ -384,9 +388,64 @@ const Index = () => {
           processArgument(premiseClaimData2, text2)
         ]);
         
+        // Calculate text similarities
+        const textSimilarity = {
+          arguments: null,
+          premises: null,
+          claims: null
+        };
+        
+        try {
+          // Arguments similarity
+          const argsResponse = await fetch(API_ENDPOINTS['text-similarity'], {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ argument1: text1, argument2: text2 }),
+          });
+          if (argsResponse.ok) {
+            const argsData = await argsResponse.json();
+            if (argsData.status === 'success' && argsData.result?.overall_similarity) {
+              textSimilarity.arguments = argsData.result.overall_similarity;
+            }
+          }
+          
+          // Premises similarity (only if both have premises)
+          if (argument1Data.premise !== '-' && argument2Data.premise !== '-') {
+            const premisesResponse = await fetch(API_ENDPOINTS['text-similarity'], {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ argument1: argument1Data.premise, argument2: argument2Data.premise }),
+            });
+            if (premisesResponse.ok) {
+              const premisesData = await premisesResponse.json();
+              if (premisesData.status === 'success' && premisesData.result?.overall_similarity) {
+                textSimilarity.premises = premisesData.result.overall_similarity;
+              }
+            }
+          }
+          
+          // Claims similarity (only if both have claims)
+          if (argument1Data.claim !== '-' && argument2Data.claim !== '-') {
+            const claimsResponse = await fetch(API_ENDPOINTS['text-similarity'], {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ argument1: argument1Data.claim, argument2: argument2Data.claim }),
+            });
+            if (claimsResponse.ok) {
+              const claimsData = await claimsResponse.json();
+              if (claimsData.status === 'success' && claimsData.result?.overall_similarity) {
+                textSimilarity.claims = claimsData.result.overall_similarity;
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to calculate text similarities:', error);
+        }
+        
         setResult({
           argument1: argument1Data,
-          argument2: argument2Data
+          argument2: argument2Data,
+          textSimilarity
         });
         
       } catch (error) {
@@ -495,10 +554,13 @@ const Index = () => {
         const topicSimilarityData = await topicSimilarityResponse.json();
         const topSimilarityScore = topicSimilarityData.status === 'success' ? topicSimilarityData.result.top_similarity_score : null;
         
-        // 3. Get stance classification (extract topic first)
-        let stanceResult = null;
+        // 3. Get stance classification for BOTH arguments (extract topic first for each)
+        let stanceResult1 = null;
+        let stanceResult2 = null;
+        
         try {
-          const topicExtractionResponse = await fetch(API_ENDPOINTS['extract-topics'], {
+          // Get stance for argument 1
+          const topicExtractionResponse1 = await fetch(API_ENDPOINTS['extract-topics'], {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -508,27 +570,64 @@ const Index = () => {
             }),
           });
           
-          if (topicExtractionResponse.ok) {
-            const topicData = await topicExtractionResponse.json();
+          if (topicExtractionResponse1.ok) {
+            const topicData1 = await topicExtractionResponse1.json();
             
-            if (topicData.status === 'success' && topicData.result && topicData.result.topics && topicData.result.topics.length > 0) {
-              const extractedTopic = topicData.result.topics[0]; // Use first extracted topic
+            if (topicData1.status === 'success' && topicData1.result?.topics?.[0]) {
+              const extractedTopic1 = topicData1.result.topics[0];
               
-              const stanceResponse = await fetch(API_ENDPOINTS['stance-classification'], {
+              const stanceResponse1 = await fetch(API_ENDPOINTS['stance-classification'], {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                   argument1: text1,
-                  argument2: extractedTopic
+                  argument2: extractedTopic1
                 }),
               });
               
-              if (stanceResponse.ok) {
-                const stanceData = await stanceResponse.json();
-                if (stanceData.status === 'success' && stanceData.result) {
-                  stanceResult = stanceData.result.stance;
+              if (stanceResponse1.ok) {
+                const stanceData1 = await stanceResponse1.json();
+                if (stanceData1.status === 'success' && stanceData1.result) {
+                  stanceResult1 = stanceData1.result.stance;
+                }
+              }
+            }
+          }
+          
+          // Get stance for argument 2
+          const topicExtractionResponse2 = await fetch(API_ENDPOINTS['extract-topics'], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              argument: text2
+            }),
+          });
+          
+          if (topicExtractionResponse2.ok) {
+            const topicData2 = await topicExtractionResponse2.json();
+            
+            if (topicData2.status === 'success' && topicData2.result?.topics?.[0]) {
+              const extractedTopic2 = topicData2.result.topics[0];
+              
+              const stanceResponse2 = await fetch(API_ENDPOINTS['stance-classification'], {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  argument1: text2,
+                  argument2: extractedTopic2
+                }),
+              });
+              
+              if (stanceResponse2.ok) {
+                const stanceData2 = await stanceResponse2.json();
+                if (stanceData2.status === 'success' && stanceData2.result) {
+                  stanceResult2 = stanceData2.result.stance;
                 }
               }
             }
@@ -597,8 +696,12 @@ const Index = () => {
         }
         
         formattedResult += "Stance Classification\n";
-        if (stanceResult) {
-          formattedResult += `${stanceResult}\n\n`;
+        if (stanceResult1 && stanceResult2) {
+          formattedResult += `Arg1: ${stanceResult1}, Arg2: ${stanceResult2}\n\n`;
+        } else if (stanceResult1) {
+          formattedResult += `Arg1: ${stanceResult1}, Arg2: Failed to retrieve\n\n`;
+        } else if (stanceResult2) {
+          formattedResult += `Arg1: Failed to retrieve, Arg2: ${stanceResult2}\n\n`;
         } else {
           formattedResult += `Failed to retrieve\n\n`;
         }
