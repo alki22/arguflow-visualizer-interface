@@ -41,7 +41,7 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
     );
   }
 
-  // Handle Topic Similarity Analysis with 2x2 grid
+  // Handle Topic Similarity Analysis with detected topics section and 2x2 grid
   if (activeTab === 'topic-similarity' && typeof result === 'object' && result.topics1) {
     const { topics1, topics2, similarities } = result;
     
@@ -56,37 +56,81 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
 
     return (
       <div className={cn("mt-6 animate-fade-in", className)}>
-        <h3 className="text-lg font-medium mb-4">Topic Similarity Grid</h3>
-        
-        {/* Grid container */}
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
-          {/* Header row */}
-          <div className="grid grid-cols-3 bg-gray-50">
-            <div className="p-3 border-r border-gray-300"></div>
-            {topics2.map((topic2, index) => (
-              <div key={index} className="p-3 border-r border-gray-300 last:border-r-0 font-medium text-sm">
-                {topic2}
+        {/* Detected Topics Section */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-4">Detected Topics</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-base font-medium text-gray-700 mb-2">Argument 1 Topics:</h4>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                {topics1.length > 0 ? (
+                  <ul className="space-y-1">
+                    {topics1.map((topic, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        • {topic}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-sm text-gray-500">No topics detected</span>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-base font-medium text-gray-700 mb-2">Argument 2 Topics:</h4>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                {topics2.length > 0 ? (
+                  <ul className="space-y-1">
+                    {topics2.map((topic, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        • {topic}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-sm text-gray-500">No topics detected</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Topic Similarity Grid */}
+        <div>
+          <h3 className="text-lg font-medium mb-4">Topic Similarity Grid</h3>
+          
+          {/* Grid container */}
+          <div className="border border-gray-300 rounded-lg overflow-hidden">
+            {/* Header row */}
+            <div className={`grid bg-gray-50`} style={{ gridTemplateColumns: `1fr repeat(${topics2.length}, 1fr)` }}>
+              <div className="p-3 border-r border-gray-300"></div>
+              {topics2.map((topic2, index) => (
+                <div key={index} className="p-3 border-r border-gray-300 last:border-r-0 font-medium text-sm">
+                  {topic2}
+                </div>
+              ))}
+            </div>
+            
+            {/* Data rows */}
+            {topics1.map((topic1, rowIndex) => (
+              <div key={rowIndex} className={`grid border-t border-gray-300`} style={{ gridTemplateColumns: `1fr repeat(${topics2.length}, 1fr)` }}>
+                <div className="p-3 border-r border-gray-300 bg-gray-50 font-medium text-sm">
+                  {topic1}
+                </div>
+                {topics2.map((topic2, colIndex) => {
+                  const key = `${topic1}|${topic2}`;
+                  const similarity = similarities[key];
+                  return (
+                    <div key={colIndex} className="p-3 border-r border-gray-300 last:border-r-0 text-center">
+                      {similarity !== undefined && similarity !== null ? similarity.toFixed(4) : '0.0000'}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
-          
-          {/* Data rows */}
-          {topics1.map((topic1, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-3 border-t border-gray-300">
-              <div className="p-3 border-r border-gray-300 bg-gray-50 font-medium text-sm">
-                {topic1}
-              </div>
-              {topics2.map((topic2, colIndex) => {
-                const key = `${topic1}|${topic2}`;
-                const similarity = similarities[key];
-                return (
-                  <div key={colIndex} className="p-3 border-r border-gray-300 last:border-r-0 text-center">
-                    {similarity !== undefined ? similarity.toFixed(4) : 'N/A'}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
         </div>
       </div>
     );
