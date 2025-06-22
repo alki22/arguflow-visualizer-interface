@@ -41,6 +41,57 @@ const AnalysisResult = ({ result, isLoading, activeTab, className }: AnalysisRes
     );
   }
 
+  // Handle Topic Similarity Analysis with 2x2 grid
+  if (activeTab === 'topic-similarity' && typeof result === 'object' && result.topics1) {
+    const { topics1, topics2, similarities } = result;
+    
+    if (result.error) {
+      return (
+        <div className={cn("mt-6 animate-fade-in", className)}>
+          <h3 className="text-lg font-medium mb-4">Analysis Result</h3>
+          <div className="text-red-500">{result.error}</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={cn("mt-6 animate-fade-in", className)}>
+        <h3 className="text-lg font-medium mb-4">Topic Similarity Grid</h3>
+        
+        {/* Grid container */}
+        <div className="border border-gray-300 rounded-lg overflow-hidden">
+          {/* Header row */}
+          <div className="grid grid-cols-3 bg-gray-50">
+            <div className="p-3 border-r border-gray-300"></div>
+            {topics2.map((topic2, index) => (
+              <div key={index} className="p-3 border-r border-gray-300 last:border-r-0 font-medium text-sm">
+                {topic2}
+              </div>
+            ))}
+          </div>
+          
+          {/* Data rows */}
+          {topics1.map((topic1, rowIndex) => (
+            <div key={rowIndex} className="grid grid-cols-3 border-t border-gray-300">
+              <div className="p-3 border-r border-gray-300 bg-gray-50 font-medium text-sm">
+                {topic1}
+              </div>
+              {topics2.map((topic2, colIndex) => {
+                const key = `${topic1}|${topic2}`;
+                const similarity = similarities[key];
+                return (
+                  <div key={colIndex} className="p-3 border-r border-gray-300 last:border-r-0 text-center">
+                    {similarity !== undefined ? similarity.toFixed(4) : 'N/A'}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Handle Global Similarity Analysis with separate fields
   if (activeTab === 'global-similarity-analysis' && typeof result === 'string') {
     const sections = result.split('\n\n').filter(section => section.trim());

@@ -147,68 +147,33 @@ export function formatTopicSimilarityOutput(response: any): string {
   return output.trim();
 }
 
-export function formatTopicSimilarityLLMOutput(response: any): string {
+export function formatTopicSimilarityLLMOutput(response: any): any {
   if (!response || typeof response !== 'object') {
-    return 'Invalid response format';
+    return { error: 'Invalid response format' };
   }
 
   const {
-    argument1,
-    argument2,
     topics_argument1,
     topics_argument2,
-    top_similarity_score,
-    interpretation,
-    top_similar_pairs,
-    total_comparisons
+    top_similar_pairs
   } = response;
 
-  let output = '';
+  // Create a 2x2 grid structure for similarity values
+  const gridData = {
+    topics1: topics_argument1 || [],
+    topics2: topics_argument2 || [],
+    similarities: {}
+  };
 
-  // 1. Interpretation
-  if (interpretation) {
-    output += `Interpretation: ${interpretation}\n\n`;
-  }
-
-  // 2. Top similarity score
-  if (typeof top_similarity_score === 'number') {
-    output += `Top Similarity Score: ${top_similarity_score.toFixed(4)}\n\n`;
-  }
-
-  // 3. Topics for each argument
-  if (topics_argument1 && Array.isArray(topics_argument1)) {
-    output += `Argument 1 Topics:\n`;
-    topics_argument1.forEach((topic: string, index: number) => {
-      output += `  ${index + 1}. ${topic}\n`;
-    });
-    output += '\n';
-  }
-
-  if (topics_argument2 && Array.isArray(topics_argument2)) {
-    output += `Argument 2 Topics:\n`;
-    topics_argument2.forEach((topic: string, index: number) => {
-      output += `  ${index + 1}. ${topic}\n`;
-    });
-    output += '\n';
-  }
-
-  // 4. Top similar topic pairs
-  if (top_similar_pairs && Array.isArray(top_similar_pairs) && top_similar_pairs.length > 0) {
-    output += `Top Similar Topic Pairs:\n\n`;
-    
-    top_similar_pairs.forEach((pair: any, index: number) => {
-      output += `${index + 1}. "${pair.topic_from_arg1}" ↔ "${pair.topic_from_arg2}"\n`;
-      output += `   Similarity Score: ${pair.similarity_score.toFixed(4)}\n\n`;
+  // Populate similarities from top_similar_pairs
+  if (top_similar_pairs && Array.isArray(top_similar_pairs)) {
+    top_similar_pairs.forEach((pair: any) => {
+      const key = `${pair.topic_from_arg1}|${pair.topic_from_arg2}`;
+      gridData.similarities[key] = pair.similarity_score;
     });
   }
 
-  // 5. Analysis statistics
-  if (total_comparisons) {
-    output += `Analysis Statistics:\n`;
-    output += `• Total Topic Comparisons: ${total_comparisons}\n`;
-  }
-
-  return output.trim();
+  return gridData;
 }
 
 // API endpoints for Flask backend
